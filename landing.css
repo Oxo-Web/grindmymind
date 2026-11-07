@@ -1,0 +1,157 @@
+/* =========================================================
+   Grind My Mind — page de présentation (index.html)
+   S'appuie sur les variables et boutons de style.css
+   ========================================================= */
+
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- En-tête ---------- */
+.l-top {
+  max-width: 1160px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px;
+}
+.brand-name { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+
+/* ---------- Haut de page ---------- */
+.hero-text { max-width: 1160px; margin: 0 auto; padding: 64px 24px 0; }
+.hero h1 {
+  max-width: 13ch; margin: 0 0 18px;
+  font-size: clamp(40px, 6.4vw, 72px); font-weight: 800; line-height: 1.02; letter-spacing: -.025em;
+}
+.lead { max-width: 46ch; margin: 0 0 28px; font-size: 20px; line-height: 1.5; color: var(--encre-douce); }
+.hero-cta { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 18px; }
+.btn.big { height: 50px; padding: 0 24px; font-size: 16px; }
+.hint { font-size: 14px; color: var(--encre-douce); }
+
+/* ---------- Scène de démo ---------- */
+.hero-scene { position: relative; height: 340px; margin-top: 40px; overflow: hidden; }
+
+.hs-hills {
+  position: absolute; left: 0; right: 0; top: 82px; height: 120px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 120' preserveAspectRatio='none'%3E%3Cpath d='M0 120V70C90 40 160 30 250 52S420 96 520 62S700 8 800 34S940 80 1000 70V120Z' fill='%23d3dee5'/%3E%3C/svg%3E") repeat-x left bottom / 1000px 120px;
+}
+.hs-ground { position: absolute; left: 0; right: 0; top: 202px; bottom: 0; background: var(--prairie); }
+
+.hs-road { position: absolute; top: 216px; height: 44px; background: var(--c); }
+.hs-road::after {
+  content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 1.5px); height: 3px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .9) 0 22px, transparent 22px 44px);
+}
+.hs-road.future { background: transparent; border-top: 2px dashed #b9c8d2; border-bottom: 2px dashed #b9c8d2; }
+.hs-road.future::after { display: none; }
+
+.hs-borne {
+  position: absolute; z-index: 2; top: 186px;
+  width: 24px; height: 30px; margin-left: -12px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px;
+  background: var(--blanc); border-radius: 12px 12px 3px 3px;
+  box-shadow: inset 0 9px 0 var(--c), 0 1px 2px rgba(30, 42, 51, .25);
+  font-size: 11px; font-weight: 800; line-height: 1;
+}
+.hs-sign { position: absolute; z-index: 1; top: 170px; margin-left: -14px; }
+
+.mini-card {
+  position: absolute; z-index: 3; top: 0;
+  width: 150px; margin-left: -75px; padding: 8px;
+  border-radius: var(--r-card); background: var(--blanc);
+  box-shadow: var(--shadow-card);
+}
+.mini-card::after { /* fil vers la borne */
+  content: ""; position: absolute; left: calc(50% - 1px); top: 100%;
+  width: 2px; height: 26px; background: var(--c);
+}
+.mini-photo {
+  position: relative; height: 92px; border-radius: var(--r-photo);
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--c) 14%, var(--blanc)); color: var(--c);
+}
+.mini-photo > .i { width: 28px; height: 28px; stroke-width: 1.5; }
+.mini-badge {
+  position: absolute; top: 6px; left: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px 1px 5px; border-radius: 999px;
+  background: var(--blanc); color: var(--depannage);
+  font-size: 11px; font-weight: 800;
+  box-shadow: 0 1px 3px rgba(30, 42, 51, .2);
+}
+.mini-badge .i { width: 12px; height: 12px; stroke-width: 2.2; }
+.mini-title { margin: 8px 2px 0; font-size: 13px; font-weight: 600; line-height: 1.3; }
+.mini-date { margin: 2px 2px 0; font-size: 12px; color: var(--encre-douce); }
+
+/* Le seul mouvement de la page : le van arrive, puis s'arrête */
+.hero-van {
+  position: absolute; z-index: 2; top: 160px;
+  left: 62%; width: 168px; margin-left: -180px;
+  animation: drive-in 2.2s cubic-bezier(.25, .6, .3, 1) .2s backwards;
+}
+.hero-van .van-svg { display: block; overflow: visible; }
+.hero-van .wheel { transform-box: fill-box; transform-origin: center; animation: spin .45s linear .2s 5; }
+@keyframes drive-in { from { transform: translateX(-100vw); } }
+
+/* ---------- Sections ---------- */
+.how, .feature { padding: 88px 0; background: var(--blanc); }
+.feature { border-top: 1px solid var(--horizon); }
+.feature.alt { background: var(--brume); border-top: 0; }
+
+.how h2, .feature h2 {
+  margin: 0 0 16px; max-width: 20ch;
+  font-size: clamp(28px, 3.4vw, 36px); font-weight: 800; line-height: 1.15; letter-spacing: -.015em;
+}
+.feature p { max-width: 52ch; margin: 0 0 14px; font-size: 18px; line-height: 1.6; color: var(--encre-douce); }
+
+.how-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+  margin: 40px 0 0; padding: 0; list-style: none;
+}
+.step-borne {
+  width: 32px; height: 40px; margin-bottom: 16px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px;
+  background: var(--blanc); border-radius: 16px 16px 4px 4px;
+  box-shadow: inset 0 12px 0 var(--c), 0 1px 3px rgba(30, 42, 51, .3);
+  font-size: 14px; font-weight: 800; line-height: 1;
+}
+.how-list h3 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+.how-list p { max-width: 34ch; margin: 0; color: var(--encre-douce); }
+
+.feature-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
+
+.signs { display: flex; align-items: flex-end; justify-content: center; gap: 0; margin: 0; }
+.sign-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.sign-item svg { width: 56px; height: auto; }
+.sign-item figcaption { font-size: 15px; font-weight: 600; }
+.sign-gap { width: 120px; height: 2px; margin: 0 16px 52px; background: repeating-linear-gradient(90deg, #b9c8d2 0 8px, transparent 8px 14px); }
+
+.facts { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; }
+.facts li { display: flex; gap: 14px; align-items: flex-start; }
+.facts .i { width: 22px; height: 22px; margin-top: 2px; color: var(--encre); }
+.facts strong { display: block; font-size: 17px; font-weight: 700; }
+.facts span { font-size: 16px; color: var(--encre-douce); }
+
+/* ---------- Pied de page ---------- */
+.l-foot { padding: 40px 0 48px; background: var(--encre); color: #c9d3da; font-size: 15px; }
+.l-foot p { max-width: 70ch; margin: 0 0 8px; }
+.l-foot strong { color: var(--blanc); }
+.l-foot a { color: var(--blanc); font-weight: 600; }
+.l-foot a:focus-visible { outline-color: var(--blanc); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .how-list { grid-template-columns: 1fr; gap: 32px; }
+  .feature-grid { grid-template-columns: 1fr; gap: 32px; }
+  .signs { justify-content: flex-start; }
+}
+@media (max-width: 640px) {
+  .l-top { padding: 12px 16px; }
+  .wrap { padding: 0 16px; }
+  .hero-text { padding: 40px 16px 0; }
+  .lead { font-size: 18px; }
+  .mini-card.m1 { display: none; }
+  .hero-scene { margin-top: 28px; }
+  .how, .feature { padding: 64px 0; }
+  .sign-gap { width: 64px; }
+}
+@media (max-width: 420px) {
+  .l-top .btn { padding: 0 12px; font-size: 14px; }
+  .brand-name { font-size: 17px; }
+}

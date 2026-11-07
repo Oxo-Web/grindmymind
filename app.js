@@ -31,6 +31,9 @@ const CATEGORIES = {
   relations: { label: "Relations" },
 };
 
+// Ce qui peut aider à repartir après une panne (choix multiples)
+const HELPS = ["Du repos", "Mes proches", "Une aide pro", "Le sport", "Le temps", "Changer de méthode", "Sortir, voir du monde"];
+
 /* ---------- 2. Raccourcis & utilitaires ---------- */
 const $ = (selector) => document.querySelector(selector);
 
@@ -43,6 +46,10 @@ const ui = {
   submitBtn: $("#submitBtn"), fTitle: $("#fTitle"), fDate: $("#fDate"),
   fPhoto: $("#fPhoto"), fNote: $("#fNote"), noteCount: $("#noteCount"),
   dropzone: $("#dropzone"), dzEmpty: $("#dzEmpty"), dzPreview: $("#dzPreview"), preview: $("#preview"),
+  support: $("#support"),
+  repairDialog: $("#repairDialog"), repairForm: $("#repairForm"), repairSub: $("#repairSub"),
+  rDate: $("#rDate"), rNote: $("#rNote"), rNoteCount: $("#rNoteCount"),
+  helps: $("#helps"), removeRepair: $("#removeRepair"),
   confirm: $("#confirmDialog"), confirmTitle: $("#confirmTitle"),
   confirmText: $("#confirmText"), confirmOk: $("#confirmOk"),
 };
@@ -114,7 +121,17 @@ function normalizeStep(s) {
     type: s.type === "panne" ? "panne" : "etape",
     photo: typeof s.photo === "string" && s.photo.startsWith("data:image/") ? s.photo : null,
     note: typeof s.note === "string" ? s.note.slice(0, 280) : "",
+    repair: s.type === "panne" ? normalizeRepair(s.repair) : null,
     createdAt: Number(s.createdAt) || Date.now(),
+  };
+}
+
+function normalizeRepair(r) {
+  if (!r || typeof r !== "object" || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return null;
+  return {
+    date: r.date,
+    helps: Array.isArray(r.helps) ? r.helps.filter((h) => HELPS.includes(h)) : [],
+    note: typeof r.note === "string" ? r.note.slice(0, 280) : "",
   };
 }
 
@@ -218,8 +235,15 @@ const WARNING_SVG = `<svg viewBox="0 0 28 46" width="28" height="46" aria-hidden
   <path d="M14 2 L26 24 H2 Z" fill="#fff" stroke="#c8372d" stroke-width="3" stroke-linejoin="round"/>
   <rect x="12.8" y="9" width="2.4" height="8" rx="1.2" fill="#1e2a33"/><circle cx="14" cy="20" r="1.5" fill="#1e2a33"/></svg>`;
 
+// Panneau routier « poste de dépannage » : remplace le danger quand la panne est réparée
+const DEPANNAGE_SVG = `<svg viewBox="0 0 28 50" width="28" height="50" aria-hidden="true">
+  <rect x="12.5" y="26" width="3" height="24" fill="#8a96a0"/>
+  <rect x="1" y="1" width="26" height="26" rx="3" fill="#2f6fb3" stroke="#fff" stroke-width="2"/>
+  <path d="M16.9 9.2a.6.6 0 0 0 0 .8l1 1a.6.6 0 0 0 .8 0l2.2-2.2a3.6 3.6 0 0 1-4.7 4.7l-4.1 4.1a1.3 1.3 0 0 1-1.8-1.8l4.1-4.1a3.6 3.6 0 0 1 4.7-4.7z"
+    fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 /* ---------- 5. Dessin de la frise ---------- */
-function render({ animate = true, newId = null } = {}) {
+function render({ animate = true, newId = null, repairedId = null } = {}) {
   const list = sortedSteps();
   const lastX = list.length ? xOf(list.length - 1) : LAYOUT.startX;
   const width = Math.max(ui.scene.clientWidth, lastX + 560);
@@ -236,9 +260,9 @@ function render({ animate = true, newId = null } = {}) {
     addDecor(frag, prevX, x, step.cat, step.id);
     frag.append(el("div", `road ${step.cat}`, { left: `${prevX}px`, width: `${x - prevX}px` }));
     if (step.type === "panne") {
-      const w = el("div", "warning", { left: `${x + 40}px` });
-      w.innerHTML = WARNING_SVG;
-      frag.append(w);
+      const roadSign = el("div", step.repair ? "depannage" : "warning", { left: `${x + 40}px` });
+      roadSign.innerHTML = step.repair ? DEPANNAGE_SVG : WARNING_SVG;
+      frag.append(roadSign);
     }
     frag.append(buildCard(step, i, x, step.id === newId));
   });
@@ -248,7 +272,10 @@ function render({ animate = true, newId = null } = {}) {
   ui.world.replaceChildren(frag);
   ui.empty.hidden = list.length > 0;
   renderLegend(list);
-  moveVan(list.length ? lastX - VAN_PARK : LAYOUT.startX, list.at(-1)?.type === "panne", animate);
+  const last = list.at(-1);
+  const broken = last?.type === "panne" && !last.repair;
+  moveVan(list.length ? lastX - VAN_PARK : LAYOUT.startX, broken, animate);
+  if (repairedId && repairedId === last?.id) celebrateRepair();
 }
 
 function sign(x, text, kind) {
@@ -276,7 +303,9 @@ function buildCard(step, index, x, isNew) {
     borne,
   );
 
-  const pin = el("div", `pin${step.type === "panne" ? " panne" : ""}${isNew ? " is-new" : ""}`, {
+  const isPanne = step.type === "panne";
+  const repaired = isPanne && !!step.repair;
+  const pin = el("div", `pin${isPanne ? " panne" : ""}${repaired ? " repaired" : ""}${isNew ? " is-new" : ""}`, {
     left: `${x - cardW / 2}px`, top: `${cardTop}px`, "--c": color,
   });
   pin.dataset.id = step.id;
@@ -286,7 +315,22 @@ function buildCard(step, index, x, isNew) {
   const photo = step.photo
     ? `<img class="photo" src="${esc(step.photo)}" alt="" loading="lazy">`
     : `<div class="photo placeholder">${icon(step.cat)}</div>`;
-  const isPanne = step.type === "panne";
+
+  const badge = !isPanne ? ""
+    : repaired ? `<span class="badge fixed">${icon("wrench")}Réparée</span>`
+    : `<span class="badge">${icon("alert")}Panne</span>`;
+  const tag = !isPanne ? ""
+    : `<span class="panne-tag${repaired ? " fixed" : ""}">${repaired ? "Réparée" : "Panne"}</span>`;
+  const repairBlock = repaired ? `
+    <div class="repair-block">
+      <strong>Repartie le ${esc(formatDate(step.repair.date))}</strong>
+      ${step.repair.helps.length ? `<p class="helps-list">Grâce à : ${esc(step.repair.helps.join(", ").toLowerCase())}</p>` : ""}
+      ${step.repair.note ? `<p class="repair-note">${esc(step.repair.note)}</p>` : ""}
+    </div>` : "";
+  const actions = isPanne
+    ? `<button type="button" class="mini-btn repair" data-action="repair">${icon("wrench")}${repaired ? "Réparation" : "Réparer"}</button>
+       <button type="button" class="mini-btn square" data-action="edit" aria-label="Modifier" title="Modifier">${icon("pencil")}</button>`
+    : `<button type="button" class="mini-btn" data-action="edit">${icon("pencil")}Modifier</button>`;
 
   pin.innerHTML = `
     <div class="card" tabindex="0" role="button" aria-pressed="false"
@@ -294,16 +338,19 @@ function buildCard(step, index, x, isNew) {
       <div class="card-inner">
         <div class="face front">
           ${photo}
-          ${isPanne ? `<span class="badge">${icon("alert")}Panne</span>` : ""}
+          ${badge}
           <span class="flip-hint">${icon("flip")}</span>
           <p class="title">${esc(step.title)}</p>
           <p class="date">${date}</p>
         </div>
         <div class="face back">
-          <p class="back-route"><i></i>${cat.label}${isPanne ? `<span class="panne-tag">Panne</span>` : ""}</p>
-          <p class="note${step.note ? "" : " empty"}">${step.note ? esc(step.note) : "Aucune note. Modifie l'étape pour en ajouter une."}</p>
+          <p class="back-route"><i></i>${cat.label}${tag}</p>
+          <div class="back-body">
+            <p class="note${step.note ? "" : " empty"}">${step.note ? esc(step.note) : "Aucune note. Modifie l'étape pour en ajouter une."}</p>
+            ${repairBlock}
+          </div>
           <div class="actions">
-            <button type="button" class="mini-btn" data-action="edit">${icon("pencil")}Modifier</button>
+            ${actions}
             <button type="button" class="mini-btn danger" data-action="delete" aria-label="Supprimer" title="Supprimer">${icon("trash")}</button>
           </div>
         </div>
@@ -319,7 +366,9 @@ function renderLegend(list) {
     return `<li style="--c: var(--${key})"><i></i>${cat.label}${list.length ? ` <b>${n}</b>` : ""}</li>`;
   });
   const pannes = list.filter((s) => s.type === "panne").length;
+  const fixed = list.filter((s) => s.repair).length;
   if (pannes) items.push(`<li class="alert">${icon("alert")}${plural(pannes, "panne")}</li>`);
+  if (fixed) items.push(`<li class="fixed">${icon("wrench")}${fixed} réparée${fixed > 1 ? "s" : ""}</li>`);
   ui.legend.innerHTML = items.join("");
 }
 
@@ -351,6 +400,15 @@ function moveVan(x, broken, animate) {
   ui.scene.scrollTo({ left: x - ui.scene.clientWidth * 0.45, behavior: moving ? "smooth" : "auto" });
 }
 
+// Petit saut du van quand on répare la dernière panne
+function celebrateRepair() {
+  if (reducedMotion) return;
+  ui.van.classList.remove("repaired");
+  void ui.van.offsetWidth; // relance l'animation
+  ui.van.classList.add("repaired");
+  setTimeout(() => ui.van.classList.remove("repaired"), 700);
+}
+
 /* ---------- 7. Fenêtre « étape » (ajout / modification) ---------- */
 let editingId = null;
 let pendingPhoto = null;
@@ -366,12 +424,19 @@ function openStepDialog(step = null) {
   ui.form.elements.type.value = step?.type ?? "etape";
   ui.fNote.value = step?.note ?? "";
   ui.noteCount.textContent = ui.fNote.value.length;
+  updateSupport();
   pendingPhoto = step?.photo ?? null;
   updatePhotoUI();
   closeMenu();
   ui.dialog.showModal();
   ui.fTitle.focus();
 }
+
+// Message de soutien discret quand on note une panne
+function updateSupport() {
+  ui.support.hidden = ui.form.elements.type.value !== "panne";
+}
+ui.form.addEventListener("change", (e) => { if (e.target.name === "type") updateSupport(); });
 
 function updatePhotoUI() {
   ui.dzEmpty.hidden = !!pendingPhoto;
@@ -433,8 +498,8 @@ ui.form.addEventListener("submit", (event) => {
   const isEdit = !!editingId;
   const id = editingId ?? uid();
   const next = isEdit
-    ? steps.map((s) => (s.id === id ? { ...s, ...data } : s))
-    : [...steps, { id, ...data, createdAt: Date.now() }];
+    ? steps.map((s) => (s.id === id ? { ...s, ...data, repair: data.type === "panne" ? s.repair : null } : s))
+    : [...steps, { id, ...data, repair: null, createdAt: Date.now() }];
 
   if (!commit(next)) return;
   ui.dialog.close();
@@ -442,9 +507,54 @@ ui.form.addEventListener("submit", (event) => {
   toast(isEdit ? "Modifications enregistrées" : "Étape ajoutée");
 });
 
-document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => ui.dialog.close()));
+document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
 // Clic sur le fond sombre = fermer
-ui.dialog.addEventListener("click", (e) => { if (e.target === ui.dialog) ui.dialog.close(); });
+for (const d of [ui.dialog, ui.repairDialog]) {
+  d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
+}
+
+/* Fenêtre « réparation » */
+let repairingId = null;
+
+ui.helps.innerHTML = HELPS.map((h) =>
+  `<label><input type="checkbox" name="helps" value="${esc(h)}"><span>${esc(h)}</span></label>`).join("");
+
+function openRepairDialog(step) {
+  repairingId = step.id;
+  ui.repairForm.reset();
+  ui.repairSub.textContent = step.title;
+  ui.rDate.min = step.date;
+  ui.rDate.value = step.repair?.date ?? (today() >= step.date ? today() : step.date);
+  ui.rNote.value = step.repair?.note ?? "";
+  ui.rNoteCount.textContent = ui.rNote.value.length;
+  ui.repairForm.querySelectorAll('input[name="helps"]').forEach((c) => { c.checked = !!step.repair?.helps.includes(c.value); });
+  ui.removeRepair.hidden = !step.repair;
+  ui.repairDialog.showModal();
+}
+
+function saveRepair(repair) {
+  const next = steps.map((s) => (s.id === repairingId ? { ...s, repair } : s));
+  if (!commit(next)) return false;
+  ui.repairDialog.close();
+  render({ repairedId: repair ? repairingId : null });
+  return true;
+}
+
+ui.rNote.addEventListener("input", () => { ui.rNoteCount.textContent = ui.rNote.value.length; });
+
+ui.repairForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const repair = {
+    date: ui.rDate.value,
+    helps: [...ui.repairForm.querySelectorAll('input[name="helps"]:checked')].map((c) => c.value),
+    note: ui.rNote.value.trim(),
+  };
+  if (saveRepair(repair)) toast("Réparation enregistrée");
+});
+
+ui.removeRepair.addEventListener("click", () => {
+  if (saveRepair(null)) toast("Réparation retirée");
+});
 
 /* Confirmation (remplace le confirm() du navigateur) */
 function confirmAsk({ title, text, okLabel = "OK", danger = false }) {
@@ -537,6 +647,7 @@ ui.world.addEventListener("click", async (e) => {
   const action = e.target.closest("[data-action]")?.dataset.action;
 
   if (action === "edit") { openStepDialog(step); return; }
+  if (action === "repair") { openRepairDialog(step); return; }
   if (action === "delete") {
     const ok = await confirmAsk({
       title: `Supprimer « ${step.title} » ?`,
@@ -569,7 +680,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { closeMenu(); unflipAll(); }
   const typing = e.target.closest?.("input, textarea, [contenteditable]");
-  const dialogOpen = ui.dialog.open || ui.confirm.open;
+  const dialogOpen = ui.dialog.open || ui.repairDialog.open || ui.confirm.open;
   if ((e.key === "n" || e.key === "N") && !typing && !dialogOpen && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault();
     openStepDialog();

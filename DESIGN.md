@@ -64,5 +64,31 @@ Le combi (bleu `#4A9CC0`, toit blanc) est le seul élément « fort » du décor
 | Barre en verre dépoli, nuages, soleil, survol animé  | Supprimés (le miroir de Chanel)                 |
 | Cartes inclinées + scotch décoratif                  | Cartes droites ; la couleur passe par le fil et la borne |
 
+## Page de présentation (`index.html`)
+Le haut de page montre ce qu'il y a de plus caractéristique : **la route et le van**. Le van entre une seule fois au chargement (le seul mouvement de la page) et s'arrête après une panne réparée.
+
+```
+┌ Grind My Mind                                              [Ouvrir ma frise] ┐
+│ Ta vie, comme un road trip.                                                   │
+│ Note les moments qui comptent…                                                │
+│ [Ouvrir ma frise]                                                             │
+│      ┌carte┐                 ┌carte réparée┐                                  │
+│ ═════▣1══════════▣2══════════▣3══[🔧]══════🚐══▣4═ - - - - - - - - - - - -     │
+├───────────────────────────────────────────────────────────────────────────────┤
+│ Comment ça marche   ▣1 Note un moment   ▣2 Choisis sa route   ▣3 Regarde…     │
+├───────────────────────────────────────────────────────────────────────────────┤
+│ Les pannes font partie du voyage  [⚠ → 🔧]                                    │
+│ Tes données restent chez toi                                                  │
+├───────────────────────────────────────────────────────────────────────────────┤
+│ Pas un outil de soin · Besoin de parler ? 3114 / Nightline                    │
+└───────────────────────────────────────────────────────────────────────────────┘
+```
+- Les 3 étapes forment une vraie séquence : elles sont numérotées avec les **bornes** de l'app (même langage visuel).
+- Texte aligné à gauche, une colonne de lecture de 60 caractères au plus.
+
+## Réparation
+- **Dépannage** `#2f6fb3` : le panneau routier bleu « poste de dépannage » (clé blanche) remplace le panneau de danger une fois la panne réparée.
+- Une panne réparée retrouve sa photo en couleur. Le van arrête de fumer et fait un petit saut : c'est la réponse à l'action.
+
 ## Qualité minimale
 Responsive (375 / 768 / 1024 / 1440), focus clavier visible, `prefers-reduced-motion` respecté, contraste du texte ≥ 4,5:1.

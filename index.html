@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Grind My Mind</title>
-  <meta name="description" content="Le carnet de route de ta vie : chaque moment marquant fait avancer le van.">
+  <meta name="description" content="Le carnet de route de ta vie : note les moments qui comptent, et regarde le van avancer. Gratuit, sans compte, tes données restent chez toi.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 22'><rect x='1' y='2' width='30' height='15' rx='5' fill='%234A9CC0'/><path d='M6 2h20a5 5 0 0 1 5 5v2H1V7a5 5 0 0 1 5-5z' fill='white'/><circle cx='8' cy='18' r='3.4' fill='%231E2A33'/><circle cx='24' cy='18' r='3.4' fill='%231E2A33'/></svg>">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,88 +12,79 @@
   <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="landing.css">
 </head>
-<body>
+<body class="landing">
 
-  <!-- Icônes (style Lucide) : utilisées avec <svg class="i"><use href="#i-nom"/></svg> -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
-    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
-    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
-    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
-    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
-    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/></symbol>
-    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
-    <symbol id="i-flip" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
-    <symbol id="i-trend" viewBox="0 0 24 24"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></symbol>
-    <symbol id="i-sante" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"/><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
     <symbol id="i-travail" viewBox="0 0 24 24"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></symbol>
-    <symbol id="i-relations" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-sante" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></symbol>
   </svg>
 
-  <header class="topbar">
-    <div class="brand">
+  <header class="l-top">
+    <a class="brand" href="index.html">
       <svg class="brand-icon" viewBox="0 0 32 22" aria-hidden="true">
         <rect x="1" y="2" width="30" height="15" rx="5" fill="#4A9CC0"/>
         <path d="M6 2h20a5 5 0 0 1 5 5v2H1V7a5 5 0 0 1 5-5z" fill="#fff"/>
         <circle cx="8" cy="18" r="3.4" fill="#1E2A33"/>
         <circle cx="24" cy="18" r="3.4" fill="#1E2A33"/>
       </svg>
-      <h1>Grind My Mind</h1>
-    </div>
-
-    <ul class="legend" id="legend" aria-label="Routes"></ul>
-
-    <div class="top-actions">
-      <div class="menu">
-        <button class="btn ghost" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menuPop">
-          <svg class="i" aria-hidden="true"><use href="#i-download"/></svg>
-          <span class="btn-label">Sauvegarde</span>
-          <svg class="i i-sm" aria-hidden="true"><use href="#i-chevron"/></svg>
-        </button>
-        <div class="menu-pop" id="menuPop" hidden>
-          <button type="button" id="exportBtn">
-            <svg class="i" aria-hidden="true"><use href="#i-download"/></svg>
-            <span><strong>Exporter</strong><small>Télécharge toute ta frise dans un fichier</small></span>
-          </button>
-          <button type="button" id="importBtn">
-            <svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>
-            <span><strong>Importer</strong><small>Ajoute les étapes d'un fichier exporté</small></span>
-          </button>
-        </div>
-      </div>
-      <button class="btn primary" id="addBtn" title="Raccourci : N">
-        <svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>
-        <span class="btn-label">Ajouter une étape</span>
-      </button>
-    </div>
-    <input type="file" id="importInput" accept="application/json,.json" hidden>
+      <span class="brand-name">Grind My Mind</span>
+    </a>
+    <a class="btn primary" href="app.html" data-open>Ouvrir ma frise</a>
   </header>
 
-  <main id="scene">
-    <div id="track">
-      <div class="far-wrap"><div class="far" id="far"></div></div>
-      <div class="ground"></div>
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <h1>Ta vie, comme un road trip.</h1>
+        <p class="lead">Note les moments qui comptent. Chaque étape fait avancer le van. Et quand tu tombes en panne, tu notes aussi ce qui t'a aidé à repartir.</p>
+        <div class="hero-cta">
+          <a class="btn primary big" href="app.html" data-open>Ouvrir ma frise</a>
+          <span class="hint">Gratuit, sans compte. Tes données restent sur ton appareil.</span>
+        </div>
+      </div>
 
-      <!-- Route, décor, bornes et cartes : dessinés par app.js -->
-      <div id="world"></div>
+      <!-- Démo : une route avec trois étapes, dont une panne réparée -->
+      <div class="hero-scene" aria-hidden="true">
+        <div class="hs-hills"></div>
+        <div class="hs-ground"></div>
+        <div class="hs-road future" style="left: 62%; right: 0"></div>
+        <div class="hs-road" style="left: 0; width: 18%; --c: var(--travail)"></div>
+        <div class="hs-road" style="left: 18%; width: 22%; --c: var(--relations)"></div>
+        <div class="hs-road" style="left: 40%; width: 22%; --c: var(--sante)"></div>
 
-      <section class="empty" id="empty" hidden>
-        <h2>Ton road trip commence ici.</h2>
-        <p>Ajoute un moment qui a compté : un nouveau job, une rencontre, un pas pour ta santé. Le van avance à chaque étape.</p>
-        <button class="btn primary" id="emptyAddBtn">
-          <svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>
-          Ajouter une étape
-        </button>
-      </section>
+        <article class="mini-card m1" style="left: 18%; --c: var(--travail)">
+          <div class="mini-photo">
+            <svg class="i" aria-hidden="true"><use href="#i-travail"/></svg>
+          </div>
+          <p class="mini-title">Premier stage</p>
+          <p class="mini-date">15 septembre 2025</p>
+        </article>
+        <article class="mini-card m3" style="left: 62%; --c: var(--sante)">
+          <div class="mini-photo">
+            <svg class="i" aria-hidden="true"><use href="#i-sante"/></svg>
+            <span class="mini-badge"><svg class="i" aria-hidden="true"><use href="#i-wrench"/></svg>Réparée</span>
+          </div>
+          <p class="mini-title">Partiels ratés</p>
+          <p class="mini-date">20 janvier 2026</p>
+        </article>
 
-      <!-- Le combi -->
-      <div class="van no-anim" id="van" aria-hidden="true">
-        <div class="smoke"><span></span><span></span><span></span><span></span></div>
-        <div class="dust"><span></span><span></span><span></span></div>
-        <svg class="van-svg" viewBox="0 0 200 112" width="168" height="94">
+        <span class="hs-borne" style="left: 18%; --c: var(--travail)">1</span>
+        <span class="hs-borne" style="left: 40%; --c: var(--relations)">2</span>
+        <span class="hs-borne" style="left: 62%; --c: var(--sante)">3</span>
+        <span class="hs-sign" style="left: calc(62% + 40px)"><svg viewBox="0 0 28 50" width="28" height="50" aria-hidden="true">
+  <rect x="12.5" y="26" width="3" height="24" fill="#8a96a0"/>
+  <rect x="1" y="1" width="26" height="26" rx="3" fill="#2f6fb3" stroke="#fff" stroke-width="2"/>
+  <path d="M16.9 9.2a.6.6 0 0 0 0 .8l1 1a.6.6 0 0 0 .8 0l2.2-2.2a3.6 3.6 0 0 1-4.7 4.7l-4.1 4.1a1.3 1.3 0 0 1-1.8-1.8l4.1-4.1a3.6 3.6 0 0 1 4.7-4.7z"
+    fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+
+        <div class="hero-van"><svg class="van-svg" viewBox="0 0 200 112" width="168" height="94">
           <ellipse cx="100" cy="106" rx="90" ry="5" fill="rgba(30,42,51,.14)"/>
           <rect x="44" y="11" width="4" height="7" fill="#8A96A0"/>
           <rect x="140" y="11" width="4" height="7" fill="#8A96A0"/>
@@ -130,94 +121,85 @@
             <circle cx="152" cy="92" r="3" fill="#8A96A0"/>
             <rect x="151" y="85" width="2" height="4" fill="#8A96A0"/>
           </g>
-        </svg>
+        </svg></div>
       </div>
-    </div>
+    </section>
+
+    <section class="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title">Comment ça marche</h2>
+        <ol class="how-list">
+          <li>
+            <span class="step-borne" style="--c: var(--travail)">1</span>
+            <h3>Note un moment</h3>
+            <p>Un titre, une date, une photo si tu veux, et une note au dos de la carte.</p>
+          </li>
+          <li>
+            <span class="step-borne" style="--c: var(--relations)">2</span>
+            <h3>Choisis sa route</h3>
+            <p>Santé, travail ou relations : chaque route a sa couleur et son paysage.</p>
+          </li>
+          <li>
+            <span class="step-borne" style="--c: var(--sante)">3</span>
+            <h3>Regarde le chemin parcouru</h3>
+            <p>Le van avance à chaque étape, et les bornes s'alignent dans l'ordre où tu as vécu les choses.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="feature" aria-labelledby="panne-title">
+      <div class="wrap feature-grid">
+        <div>
+          <h2 id="panne-title">Les pannes font partie du voyage</h2>
+          <p>Un coup dur, ça se note aussi. Le van fume et un panneau de danger apparaît sur la route.</p>
+          <p>Quand tu repars, tu notes ce qui t'a aidé : du repos, tes proches, une aide pro, le temps. La panne reste sur ta route, réparée. La prochaine fois, tu sauras ce qui marche pour toi.</p>
+        </div>
+        <figure class="signs">
+          <div class="sign-item"><svg viewBox="0 0 28 46" width="28" height="46" aria-hidden="true">
+  <rect x="12.5" y="22" width="3" height="24" fill="#8a96a0"/>
+  <path d="M14 2 L26 24 H2 Z" fill="#fff" stroke="#c8372d" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="12.8" y="9" width="2.4" height="8" rx="1.2" fill="#1e2a33"/><circle cx="14" cy="20" r="1.5" fill="#1e2a33"/></svg><figcaption>Panne</figcaption></div>
+          <div class="sign-gap" aria-hidden="true"></div>
+          <div class="sign-item"><svg viewBox="0 0 28 50" width="28" height="50" aria-hidden="true">
+  <rect x="12.5" y="26" width="3" height="24" fill="#8a96a0"/>
+  <rect x="1" y="1" width="26" height="26" rx="3" fill="#2f6fb3" stroke="#fff" stroke-width="2"/>
+  <path d="M16.9 9.2a.6.6 0 0 0 0 .8l1 1a.6.6 0 0 0 .8 0l2.2-2.2a3.6 3.6 0 0 1-4.7 4.7l-4.1 4.1a1.3 1.3 0 0 1-1.8-1.8l4.1-4.1a3.6 3.6 0 0 1 4.7-4.7z"
+    fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><figcaption>Réparée</figcaption></div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="feature alt" aria-labelledby="data-title">
+      <div class="wrap feature-grid">
+        <div>
+          <h2 id="data-title">Tes données restent chez toi</h2>
+          <p>Ta frise est enregistrée dans ton navigateur, sur ton appareil. Personne d'autre n'y a accès. C'est toi qui choisis ce que tu montres, et à qui.</p>
+        </div>
+        <ul class="facts">
+          <li><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg><span><strong>Aucun compte</strong>Pas d'inscription, pas de mot de passe.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-cloud-off"/></svg><span><strong>Aucun serveur</strong>Rien n'est envoyé sur Internet.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><strong>Ta sauvegarde</strong>Exporte ta frise dans un fichier quand tu veux.</span></li>
+        </ul>
+      </div>
+    </section>
   </main>
 
-  <!-- Fenêtre : ajouter / modifier une étape -->
-  <dialog id="stepDialog" aria-labelledby="dialogTitle">
-    <form id="stepForm">
-      <header class="dlg-head">
-        <h2 id="dialogTitle">Nouvelle étape</h2>
-        <button type="button" class="icon-btn" data-close aria-label="Fermer">
-          <svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
-        </button>
-      </header>
+  <footer class="l-foot">
+    <div class="wrap">
+      <p><strong>Grind My Mind n'est pas un outil de soin</strong> et ne remplace pas un accompagnement.</p>
+      <p>Besoin de parler maintenant ? Le <a href="tel:3114">3114</a> répond 24 h/24, gratuitement. Si tu es étudiant ou étudiante, <a href="https://www.nightline.fr" target="_blank" rel="noopener">Nightline</a> t'écoute aussi le soir.</p>
+    </div>
+  </footer>
 
-      <div class="dlg-body">
-        <div class="field">
-          <label for="fTitle">Qu'est-ce qui s'est passé ?</label>
-          <input id="fTitle" type="text" required maxlength="60" placeholder="J'ai trouvé un travail" autocomplete="off">
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label for="fDate">Date</label>
-            <input id="fDate" type="date" required>
-          </div>
-          <fieldset class="field">
-            <legend>Type</legend>
-            <div class="seg">
-              <label><input type="radio" name="type" value="etape" checked><span><svg class="i" aria-hidden="true"><use href="#i-trend"/></svg>Ça avance</span></label>
-              <label><input type="radio" name="type" value="panne"><span><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg>Panne</span></label>
-            </div>
-          </fieldset>
-        </div>
-
-        <fieldset class="field">
-          <legend>Route</legend>
-          <div class="routes">
-            <label class="route" style="--c: var(--sante)"><input type="radio" name="cat" value="sante"><span><i></i>Santé</span></label>
-            <label class="route" style="--c: var(--travail)"><input type="radio" name="cat" value="travail" checked><span><i></i>Travail</span></label>
-            <label class="route" style="--c: var(--relations)"><input type="radio" name="cat" value="relations"><span><i></i>Relations</span></label>
-          </div>
-        </fieldset>
-
-        <div class="field">
-          <span class="label">Photo <span class="opt">(optionnel)</span></span>
-          <div class="dropzone" id="dropzone">
-            <input type="file" id="fPhoto" accept="image/*" aria-label="Choisir une photo">
-            <div class="dz-empty" id="dzEmpty">
-              <svg class="i i-lg" aria-hidden="true"><use href="#i-camera"/></svg>
-              <span><strong>Ajoute une photo</strong><br>Glisse-la ici ou clique pour la choisir</span>
-            </div>
-            <div class="dz-preview" id="dzPreview" hidden>
-              <img id="preview" alt="Aperçu de la photo">
-              <span>Clique pour changer de photo</span>
-              <button type="button" class="btn ghost small" id="removePhoto">Retirer</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="fNote">Note au dos de la carte <span class="opt">(optionnel)</span></label>
-          <textarea id="fNote" maxlength="280" rows="3" placeholder="Ce que tu as ressenti, ce que tu en retiens"></textarea>
-          <div class="counter"><span id="noteCount">0</span> / 280</div>
-        </div>
-      </div>
-
-      <footer class="dlg-foot">
-        <button type="button" class="btn ghost" data-close>Annuler</button>
-        <button type="submit" class="btn primary" id="submitBtn">Ajouter l'étape</button>
-      </footer>
-    </form>
-  </dialog>
-
-  <!-- Fenêtre de confirmation -->
-  <dialog id="confirmDialog" class="confirm" aria-labelledby="confirmTitle">
-    <form method="dialog">
-      <h3 id="confirmTitle"></h3>
-      <p id="confirmText"></p>
-      <div class="confirm-actions">
-        <button class="btn ghost" value="cancel">Annuler</button>
-        <button class="btn primary" value="ok" id="confirmOk">OK</button>
-      </div>
-    </form>
-  </dialog>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <script src="app.js"></script>
+  <script>
+    // Si une frise existe déjà, le bouton propose de la reprendre
+    try {
+      const saved = JSON.parse(localStorage.getItem("grind-my-mind.steps.v1"));
+      if (Array.isArray(saved) && saved.length) {
+        document.querySelectorAll("[data-open]").forEach((a) => { a.textContent = "Reprendre ma route"; });
+      }
+    } catch {}
+  </script>
 </body>
 </html>
