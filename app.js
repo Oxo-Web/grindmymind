@@ -13,32 +13,31 @@ const STORAGE_KEY = "grind-my-mind.steps.v1";
 
 // Doit correspondre aux variables --road-top / --road-h du CSS
 const LAYOUT = {
-  startX: 170,   // position du point de départ
-  gap: 250,      // distance entre deux étapes
-  roadTop: 380,
-  roadH: 56,
+  startX: 200,  // position du point de départ
+  gap: 240,     // distance entre deux étapes
+  roadTop: 320,
+  roadH: 48,
   cardW: 184,
-  cardH: 236,
-  stemAbove: 34, // longueur du fil sous une carte du haut
-  stemBelow: 40, // longueur du fil au-dessus d'une carte du bas
+  cardH: 216,
+  borneH: 30,   // hauteur d'une borne kilométrique
+  stem: 24,     // longueur du fil entre la borne et la carte
 };
 const DRIVE_MS = 1800; // durée du trajet du van (comme dans le CSS)
+const VAN_PARK = 96;   // le van se gare juste avant la dernière borne
 
 const CATEGORIES = {
-  sante:     { label: "Santé",     emoji: "🌿" },
-  travail:   { label: "Travail",   emoji: "💼" },
-  relations: { label: "Relations", emoji: "❤️" },
+  sante:     { label: "Santé" },
+  travail:   { label: "Travail" },
+  relations: { label: "Relations" },
 };
-const TYPES = { etape: "Ça avance", panne: "Panne" };
-const TILTS = [-3, 2, -1.5, 2.5, -2, 1.5];
 
 /* ---------- 2. Raccourcis & utilitaires ---------- */
 const $ = (selector) => document.querySelector(selector);
 
 const ui = {
   scene: $("#scene"), track: $("#track"), world: $("#world"),
-  far: $("#far"), hills: $("#hills"), van: $("#van"),
-  stats: $("#stats"), empty: $("#empty"), toast: $("#toast"),
+  far: $("#far"), van: $("#van"),
+  legend: $("#legend"), empty: $("#empty"), toast: $("#toast"),
   menuBtn: $("#menuBtn"), menuPop: $("#menuPop"), importInput: $("#importInput"),
   dialog: $("#stepDialog"), form: $("#stepForm"), dialogTitle: $("#dialogTitle"),
   submitBtn: $("#submitBtn"), fTitle: $("#fTitle"), fDate: $("#fDate"),
@@ -49,6 +48,9 @@ const ui = {
 };
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Icône du sprite défini dans index.html
+const icon = (name) => `<svg class="i" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 
 // Protège le texte saisi avant de l'insérer dans la page
 function esc(value) {
@@ -77,7 +79,7 @@ const today = () => {
 
 function formatDate(iso) {
   return new Date(iso + "T00:00").toLocaleDateString("fr-FR",
-    { day: "numeric", month: "short", year: "numeric" });
+    { day: "numeric", month: "long", year: "numeric" });
 }
 
 const plural = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
@@ -95,7 +97,6 @@ function seededRandom(seed) {
     return ((h ^= h >>> 16) >>> 0) / 4294967296;
   };
 }
-const pick = (rand, list) => list[Math.floor(rand() * list.length)];
 
 /* ---------- 3. Données ---------- */
 let steps = loadSteps();
@@ -133,7 +134,7 @@ function commit(next) {
     steps = next;
     return true;
   } catch {
-    toast("Mémoire du navigateur pleine : exporte une sauvegarde puis retire quelques photos.", "error");
+    toast("Stockage plein. Exporte une sauvegarde, puis retire des photos.", "error");
     return false;
   }
 }
@@ -144,82 +145,62 @@ function sortedSteps() {
 
 const xOf = (index) => LAYOUT.startX + (index + 1) * LAYOUT.gap;
 
-/* ---------- 4. Décor (SVG dessinés en code) ---------- */
-const COLORS = {
-  greens: ["#5fb36a", "#4fa25e", "#79c27a", "#3f9157"],
-  pinks: ["#f6a5c0", "#f38fb0", "#ffc2d4"],
-  buildings: ["#8fa6c6", "#a4b6d0", "#7f95b8", "#b7aacf", "#9fb3c9"],
-};
-
+/* ---------- 4. Décor : silhouettes d'une seule teinte par route ---------- */
+// Forêt (santé), ville (travail), village (relations)
 const decorMakers = {
-  roundTree(rand, colors = COLORS.greens) {
-    const c = pick(rand, colors);
-    return { w: 70, h: 100, svg: `<svg viewBox="0 0 70 100">
-      <rect x="32" y="56" width="6" height="44" rx="3" fill="#8a6a4b"/>
-      <circle cx="35" cy="40" r="25" fill="${c}"/><circle cx="21" cy="53" r="16" fill="${c}"/>
-      <circle cx="49" cy="52" r="17" fill="${c}"/><circle cx="27" cy="31" r="9" fill="#fff" opacity=".2"/></svg>` };
+  tree() {
+    return { w: 48, h: 76, svg: `<svg viewBox="0 0 48 76"><rect x="22" y="40" width="4" height="36" rx="2"/><circle cx="24" cy="26" r="20"/></svg>` };
   },
-  pine(rand) {
-    const c = pick(rand, COLORS.greens);
-    return { w: 50, h: 110, svg: `<svg viewBox="0 0 50 110">
-      <rect x="22" y="86" width="6" height="24" rx="2" fill="#7a5c40"/>
-      <path d="M25 2 L44 40 H34 L48 66 H36 L50 92 H0 L14 66 H2 L16 40 H6 Z" fill="${c}"/></svg>` };
+  pine() {
+    return { w: 40, h: 88, svg: `<svg viewBox="0 0 40 88"><rect x="18" y="66" width="4" height="22" rx="2"/><path d="M20 0 L40 70 H0 Z"/></svg>` };
   },
-  bush(rand) {
-    const c = pick(rand, COLORS.greens);
-    return { w: 56, h: 30, svg: `<svg viewBox="0 0 56 30">
-      <ellipse cx="18" cy="20" rx="16" ry="11" fill="${c}"/><ellipse cx="36" cy="17" rx="18" ry="14" fill="${c}"/>
-      <ellipse cx="32" cy="11" rx="7" ry="4" fill="#fff" opacity=".18"/></svg>` };
+  bush() {
+    return { w: 52, h: 24, svg: `<svg viewBox="0 0 52 24"><path d="M0 24 Q0 6 16 6 Q22 0 32 2 Q48 2 52 24 Z"/></svg>` };
   },
   building(rand) {
-    const w = 44 + Math.floor(rand() * 28);
-    const h = 70 + Math.floor(rand() * 80);
-    const c = pick(rand, COLORS.buildings);
+    const w = 34 + Math.floor(rand() * 24);
+    const h = 60 + Math.floor(rand() * 70);
     let windows = "";
-    for (let y = 12; y < h - 14; y += 14) {
-      for (let x = 8; x < w - 10; x += 11) {
-        const lit = rand() < 0.35;
-        windows += `<rect x="${x}" y="${y}" width="6" height="8" rx="1" fill="${lit ? "#ffe39a" : "#fff"}" opacity="${lit ? 0.95 : 0.45}"/>`;
-      }
+    for (let y = 10; y < h - 12; y += 12) {
+      for (let x = 7; x < w - 8; x += 9) windows += `<rect x="${x}" y="${y}" width="4" height="6" fill="#fff" opacity=".45"/>`;
     }
-    const antenna = rand() < 0.4 ? `<rect x="${w / 2 - 1}" y="0" width="2" height="10" fill="${c}"/>` : "";
-    return { w, h: h + 10, svg: `<svg viewBox="0 0 ${w} ${h + 10}">${antenna}
-      <rect x="0" y="10" width="${w}" height="${h}" rx="3" fill="${c}"/>
-      <g transform="translate(0 10)">${windows}</g></svg>` };
+    return { w, h, svg: `<svg viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" rx="2"/>${windows}</svg>` };
   },
-  flowers(rand) {
-    const heads = [0, 1, 2].map((i) => {
-      const x = 8 + i * 12, y = 10 + rand() * 8;
-      const c = pick(rand, ["#ee5d7a", "#ffd166", "#ffffff", "#f6a5c0"]);
-      return `<line x1="${x}" y1="${y}" x2="${x}" y2="34" stroke="#4f9a5a" stroke-width="2"/>
-        <circle cx="${x}" cy="${y}" r="5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.8" fill="#f4a12e"/>`;
-    }).join("");
-    return { w: 40, h: 34, svg: `<svg viewBox="0 0 40 34">${heads}</svg>` };
+  house(rand) {
+    const w = 40 + Math.floor(rand() * 14);
+    return { w, h: 44, svg: `<svg viewBox="0 0 ${w} 44"><path d="M0 20 L${w / 2} 0 L${w} 20 V44 H0 Z"/>
+      <rect x="${w / 2 - 5}" y="28" width="10" height="16" fill="#fff" opacity=".45"/></svg>` };
   },
 };
 
-// Chaque route a son paysage : forêt (santé), ville (travail), cerisiers (relations)
+const DECOR_TONE = {
+  sante: "color-mix(in srgb, var(--sante) 32%, var(--prairie))",
+  travail: "color-mix(in srgb, #7d93a8 45%, var(--prairie))",
+  relations: "color-mix(in srgb, var(--relations) 28%, var(--prairie))",
+  start: "color-mix(in srgb, var(--encre) 10%, var(--prairie))",
+};
+
 function makeDecor(kind, rand) {
   const r = rand();
   switch (kind) {
-    case "sante":     return r < 0.45 ? decorMakers.roundTree(rand) : r < 0.85 ? decorMakers.pine(rand) : decorMakers.bush(rand);
-    case "travail":   return r < 0.85 ? decorMakers.building(rand) : decorMakers.bush(rand);
-    case "relations": return r < 0.55 ? decorMakers.roundTree(rand, COLORS.pinks) : decorMakers.flowers(rand);
-    default:          return r < 0.6 ? decorMakers.roundTree(rand) : decorMakers.bush(rand);
+    case "sante":     return r < 0.5 ? decorMakers.pine() : r < 0.85 ? decorMakers.tree() : decorMakers.bush();
+    case "travail":   return r < 0.85 ? decorMakers.building(rand) : decorMakers.bush();
+    case "relations": return r < 0.5 ? decorMakers.house(rand) : r < 0.85 ? decorMakers.tree() : decorMakers.bush();
+    default:          return r < 0.5 ? decorMakers.tree() : decorMakers.bush();
   }
 }
 
 function addDecor(frag, fromX, toX, kind, seed) {
   const rand = seededRandom(seed);
-  const count = Math.max(2, Math.round((toX - fromX) / 85));
+  const count = Math.max(2, Math.round((toX - fromX) / 100));
   for (let k = 0; k < count; k++) {
     const item = makeDecor(kind, rand);
-    const scale = 0.75 + rand() * 0.4;
+    const scale = 0.8 + rand() * 0.35;
     const w = item.w * scale, h = item.h * scale;
-    const x = fromX + ((toX - fromX) * (k + 0.5)) / count + (rand() - 0.5) * 30;
+    const x = fromX + ((toX - fromX) * (k + 0.5)) / count + (rand() - 0.5) * 34;
     const node = el("div", "decor", {
-      left: `${x - w / 2}px`, top: `${LAYOUT.roadTop + 6 - h}px`,
-      width: `${w}px`, height: `${h}px`,
+      left: `${x - w / 2}px`, top: `${LAYOUT.roadTop + 2 - h}px`,
+      width: `${w}px`, height: `${h}px`, color: DECOR_TONE[kind],
     });
     node.innerHTML = item.svg;
     frag.append(node);
@@ -228,17 +209,14 @@ function addDecor(frag, fromX, toX, kind, seed) {
 
 const svgUrl = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 
-ui.far.style.backgroundImage = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 170" preserveAspectRatio="none">
-  <path d="M0 170V100L70 72L130 96L220 38L300 90L380 58L450 94L540 30L620 86L700 60L780 98L850 74L900 100V170Z" fill="#f2bea6"/>
-  <path d="M220 38L238 50L226 49L214 55L206 50Z M540 30L558 43L546 42L534 48L526 42Z" fill="#fff" opacity=".7"/>
-  <path d="M0 170V128L90 100L170 132L260 92L350 126L440 104L520 136L610 96L700 124L790 106L900 128V170Z" fill="#e7a897"/></svg>`);
-ui.hills.style.backgroundImage = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 36" preserveAspectRatio="none">
-  <path d="M0 36V22Q52 4 105 18T210 16T315 20T420 22V36Z" fill="#b0d995"/></svg>`);
+// Collines lointaines (défilent plus lentement : effet de profondeur)
+ui.far.style.backgroundImage = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 120" preserveAspectRatio="none">
+  <path d="M0 120V70C90 40 160 30 250 52S420 96 520 62S700 8 800 34S940 80 1000 70V120Z" fill="#d3dee5"/></svg>`);
 
-const WARNING_SVG = `<svg viewBox="0 0 34 50" width="34" height="50" aria-hidden="true">
-  <rect x="15.5" y="26" width="3" height="24" rx="1.5" fill="#8a6a4b"/>
-  <path d="M17 2 L32 28 H2 Z" fill="#fff" stroke="#d9342b" stroke-width="3.5" stroke-linejoin="round"/>
-  <rect x="15.6" y="10" width="2.8" height="9" rx="1.4" fill="#1f1b24"/><circle cx="17" cy="23" r="1.8" fill="#1f1b24"/></svg>`;
+const WARNING_SVG = `<svg viewBox="0 0 28 46" width="28" height="46" aria-hidden="true">
+  <rect x="12.5" y="22" width="3" height="24" fill="#8a96a0"/>
+  <path d="M14 2 L26 24 H2 Z" fill="#fff" stroke="#c8372d" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="12.8" y="9" width="2.4" height="8" rx="1.2" fill="#1e2a33"/><circle cx="14" cy="20" r="1.5" fill="#1e2a33"/></svg>`;
 
 /* ---------- 5. Dessin de la frise ---------- */
 function render({ animate = true, newId = null } = {}) {
@@ -250,7 +228,7 @@ function render({ animate = true, newId = null } = {}) {
   const frag = document.createDocumentFragment();
   frag.append(el("div", "road future", { left: "0px", width: `${width}px` }));
   addDecor(frag, 0, LAYOUT.startX, "start", "depart");
-  frag.append(sign(LAYOUT.startX - 80, "Départ", "start"));
+  frag.append(sign(LAYOUT.startX - 140, "Départ", "start"));
 
   list.forEach((step, i) => {
     const x = xOf(i);
@@ -258,19 +236,19 @@ function render({ animate = true, newId = null } = {}) {
     addDecor(frag, prevX, x, step.cat, step.id);
     frag.append(el("div", `road ${step.cat}`, { left: `${prevX}px`, width: `${x - prevX}px` }));
     if (step.type === "panne") {
-      const w = el("div", "warning", { left: `${x - 125}px` });
+      const w = el("div", "warning", { left: `${x + 40}px` });
       w.innerHTML = WARNING_SVG;
       frag.append(w);
     }
     frag.append(buildCard(step, i, x, step.id === newId));
   });
 
-  if (list.length) frag.append(sign(lastX + 300, "À suivre…", "end"));
+  if (list.length) frag.append(sign(lastX + 300, "À suivre", "end"));
 
   ui.world.replaceChildren(frag);
   ui.empty.hidden = list.length > 0;
-  renderStats(list);
-  moveVan(lastX, list.at(-1)?.type === "panne", animate);
+  renderLegend(list);
+  moveVan(list.length ? lastX - VAN_PARK : LAYOUT.startX, list.at(-1)?.type === "panne", animate);
 }
 
 function sign(x, text, kind) {
@@ -282,49 +260,51 @@ function sign(x, text, kind) {
 function buildCard(step, index, x, isNew) {
   const frag = document.createDocumentFragment();
   const above = index % 2 === 0;
-  const { roadTop, roadH, cardW, cardH, stemAbove, stemBelow } = LAYOUT;
-  const top = above ? roadTop - stemAbove - cardH : roadTop + roadH + stemBelow;
+  const { roadTop, roadH, cardW, cardH, borneH, stem } = LAYOUT;
   const color = `var(--${step.cat})`;
 
-  frag.append(el("div", "stem", {
-    left: `${x}px`,
-    top: `${above ? top + cardH : roadTop + roadH}px`,
-    height: `${above ? stemAbove : stemBelow}px`,
-  }));
-  frag.append(el("div", `milestone${above ? "" : " below"}`, { left: `${x}px`, "--c": color }));
+  // Borne kilométrique (numéro de l'étape) côté carte, puis le fil
+  const borneTop = above ? roadTop - borneH : roadTop + roadH + 2;
+  const cardTop = above ? borneTop - stem - cardH : borneTop + borneH + stem;
+  const borne = el("div", "borne", { left: `${x}px`, top: `${borneTop}px`, "--c": color });
+  borne.textContent = index + 1;
+  frag.append(
+    el("div", "stem", {
+      left: `${x}px`, top: `${above ? cardTop + cardH : borneTop + borneH}px`,
+      height: `${stem}px`, "--c": color,
+    }),
+    borne,
+  );
 
-  const cat = CATEGORIES[step.cat];
   const pin = el("div", `pin${step.type === "panne" ? " panne" : ""}${isNew ? " is-new" : ""}`, {
-    left: `${x - cardW / 2}px`, top: `${top}px`,
+    left: `${x - cardW / 2}px`, top: `${cardTop}px`, "--c": color,
   });
-  pin.style.setProperty("--tilt", `${TILTS[index % TILTS.length]}deg`);
-  pin.style.setProperty("--c", color);
   pin.dataset.id = step.id;
 
+  const cat = CATEGORIES[step.cat];
+  const date = esc(formatDate(step.date));
   const photo = step.photo
     ? `<img class="photo" src="${esc(step.photo)}" alt="" loading="lazy">`
-    : `<div class="photo placeholder" aria-hidden="true">${cat.emoji}</div>`;
-  const date = esc(formatDate(step.date));
+    : `<div class="photo placeholder">${icon(step.cat)}</div>`;
+  const isPanne = step.type === "panne";
 
   pin.innerHTML = `
     <div class="card" tabindex="0" role="button" aria-pressed="false"
-         aria-label="${esc(step.title)}, ${date}. Retourner la carte">
+         aria-label="Étape ${index + 1} : ${esc(step.title)}, ${date}. Retourner la carte">
       <div class="card-inner">
         <div class="face front">
-          <span class="tape"></span>
           ${photo}
-          ${step.type === "panne" ? `<span class="stamp">Panne</span>` : ""}
-          <span class="flip-hint" aria-hidden="true">↻</span>
+          ${isPanne ? `<span class="badge">${icon("alert")}Panne</span>` : ""}
+          <span class="flip-hint">${icon("flip")}</span>
           <p class="title">${esc(step.title)}</p>
-          <p class="meta"><span>${date}</span><span>${cat.label}</span></p>
+          <p class="date">${date}</p>
         </div>
         <div class="face back">
-          <span class="tape"></span>
-          <p class="back-head"><i></i>${cat.label} · ${TYPES[step.type]}</p>
-          <p class="note${step.note ? "" : " empty"}">${step.note ? esc(step.note) : "Pas encore de petit mot…"}</p>
+          <p class="back-route"><i></i>${cat.label}${isPanne ? `<span class="panne-tag">Panne</span>` : ""}</p>
+          <p class="note${step.note ? "" : " empty"}">${step.note ? esc(step.note) : "Aucune note. Modifie l'étape pour en ajouter une."}</p>
           <div class="actions">
-            <button type="button" class="mini-btn" data-action="edit">Modifier</button>
-            <button type="button" class="mini-btn danger" data-action="delete">Supprimer</button>
+            <button type="button" class="mini-btn" data-action="edit">${icon("pencil")}Modifier</button>
+            <button type="button" class="mini-btn danger" data-action="delete" aria-label="Supprimer" title="Supprimer">${icon("trash")}</button>
           </div>
         </div>
       </div>
@@ -333,16 +313,14 @@ function buildCard(step, index, x, isNew) {
   return frag;
 }
 
-function renderStats(list) {
-  if (!list.length) { ui.stats.replaceChildren(); return; }
-  const pannes = list.filter((s) => s.type === "panne").length;
-  const chips = [`<span class="stat">🚐 <b>${list.length}</b> ${list.length > 1 ? "étapes" : "étape"}</span>`];
-  for (const [key, cat] of Object.entries(CATEGORIES)) {
+function renderLegend(list) {
+  const items = Object.entries(CATEGORIES).map(([key, cat]) => {
     const n = list.filter((s) => s.cat === key).length;
-    if (n) chips.push(`<span class="stat" style="--c: var(--${key})"><i></i><b>${n}</b> ${cat.label}</span>`);
-  }
-  if (pannes) chips.push(`<span class="stat">💨 <b>${pannes}</b> ${pannes > 1 ? "pannes" : "panne"}</span>`);
-  ui.stats.innerHTML = chips.join("");
+    return `<li style="--c: var(--${key})"><i></i>${cat.label}${list.length ? ` <b>${n}</b>` : ""}</li>`;
+  });
+  const pannes = list.filter((s) => s.type === "panne").length;
+  if (pannes) items.push(`<li class="alert">${icon("alert")}${plural(pannes, "panne")}</li>`);
+  ui.legend.innerHTML = items.join("");
 }
 
 /* ---------- 6. Le van ---------- */
@@ -381,7 +359,7 @@ function openStepDialog(step = null) {
   editingId = step?.id ?? null;
   ui.form.reset();
   ui.dialogTitle.textContent = step ? "Modifier l'étape" : "Nouvelle étape";
-  ui.submitBtn.textContent = step ? "Enregistrer" : "Ajouter l'étape";
+  ui.submitBtn.textContent = step ? "Enregistrer les modifications" : "Ajouter l'étape";
   ui.fTitle.value = step?.title ?? "";
   ui.fDate.value = step?.date ?? today();
   ui.form.elements.cat.value = step?.cat ?? "travail";
@@ -425,12 +403,12 @@ ui.fPhoto.addEventListener("change", async () => {
   const file = ui.fPhoto.files[0];
   ui.dropzone.classList.remove("dragover");
   if (!file) return;
-  if (!file.type.startsWith("image/")) { toast("Ce fichier n'est pas une image.", "error"); return; }
+  if (!file.type.startsWith("image/")) { toast("Ce fichier n'est pas une image. Choisis un JPG ou un PNG.", "error"); return; }
   try {
     pendingPhoto = await resizeImage(file);
     updatePhotoUI();
   } catch {
-    toast("Cette image n'a pas pu être lue (format HEIC ?). Essaie en JPG ou PNG.", "error");
+    toast("Image illisible (format HEIC ?). Choisis un JPG ou un PNG.", "error");
   }
   ui.fPhoto.value = "";
 });
@@ -461,9 +439,7 @@ ui.form.addEventListener("submit", (event) => {
   if (!commit(next)) return;
   ui.dialog.close();
   render({ newId: isEdit ? null : id });
-  toast(isEdit ? "Étape mise à jour ✏️"
-    : data.type === "panne" ? "Panne notée. Le van repartira 💨"
-    : "En route ! 🚐");
+  toast(isEdit ? "Modifications enregistrées" : "Étape ajoutée");
 });
 
 document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => ui.dialog.close()));
@@ -496,21 +472,21 @@ function exportData() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast(`Sauvegarde téléchargée 💾 (${plural(steps.length, "étape")})`);
+  toast(`Frise exportée (${plural(steps.length, "étape")})`);
 }
 
 async function importFile(file) {
   let parsed;
   try { parsed = JSON.parse(await file.text()); }
-  catch { toast("Ce fichier n'est pas une sauvegarde valide.", "error"); return; }
+  catch { toast("Ce fichier n'est pas une sauvegarde Grind My Mind.", "error"); return; }
 
   const raw = Array.isArray(parsed) ? parsed : parsed?.steps;
   const incoming = Array.isArray(raw) ? raw.map(normalizeStep).filter(Boolean) : [];
-  if (!incoming.length) { toast("Aucune étape trouvée dans ce fichier.", "error"); return; }
+  if (!incoming.length) { toast("Ce fichier ne contient aucune étape.", "error"); return; }
 
   const ok = await confirmAsk({
-    title: "Importer la sauvegarde ?",
-    text: `${plural(incoming.length, "étape")} vont être ajoutées à ta frise. Si une étape existe déjà, elle sera remplacée par celle du fichier.`,
+    title: `Importer ${plural(incoming.length, "étape")} ?`,
+    text: "Elles s'ajoutent à ta frise. Une étape déjà présente est remplacée par la version du fichier.",
     okLabel: "Importer",
   });
   if (!ok) return;
@@ -519,7 +495,7 @@ async function importFile(file) {
   incoming.forEach((s) => byId.set(s.id, s));
   if (commit([...byId.values()])) {
     render();
-    toast(`${plural(incoming.length, "étape")} importée${incoming.length > 1 ? "s" : ""} ✅`);
+    toast(`${plural(incoming.length, "étape")} importée${incoming.length > 1 ? "s" : ""}`);
   }
 }
 
@@ -533,7 +509,7 @@ ui.importInput.addEventListener("change", () => {
 
 /* ---------- 9. Petites interactions ---------- */
 
-// Menu « ⋯ »
+// Menu « Sauvegarde »
 function closeMenu() {
   ui.menuPop.hidden = true;
   ui.menuBtn.setAttribute("aria-expanded", "false");
@@ -563,8 +539,8 @@ ui.world.addEventListener("click", async (e) => {
   if (action === "edit") { openStepDialog(step); return; }
   if (action === "delete") {
     const ok = await confirmAsk({
-      title: "Supprimer cette étape ?",
-      text: `« ${step.title} » va disparaître de ta frise. Pense à exporter une sauvegarde si tu veux la garder.`,
+      title: `Supprimer « ${step.title} » ?`,
+      text: "L'étape disparaît de ta frise. Exporte une sauvegarde avant si tu veux la garder.",
       okLabel: "Supprimer",
       danger: true,
     });
@@ -612,7 +588,7 @@ ui.scene.addEventListener("wheel", (e) => {
   }
 }, { passive: false });
 
-// Parallaxe : les montagnes défilent plus lentement que la route
+// Parallaxe : les collines défilent plus lentement que la route
 let parallaxFrame = 0;
 ui.scene.addEventListener("scroll", () => {
   cancelAnimationFrame(parallaxFrame);
